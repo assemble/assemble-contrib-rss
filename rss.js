@@ -94,10 +94,12 @@ module.exports = function (config, callback) {
       lastBuildDate: moment().format("dddd, MMMM Do YYYY"),
       pubdate: moment().format(),
       siteurl: pkg.homepage,
+      feedname: 'feed.xml',
       feedurl: url.resolve(pkg.homepage, config.dest || 'feed.xml'),
       language: 'en',
       ttl: '60',
       geoRSS: false,
+      relativedest: false
     };
        
     moment.lang(config.language || defaults.language);  // Moment.js default language
@@ -144,7 +146,12 @@ module.exports = function (config, callback) {
     async.eachSeries(pages, function (file, next) {
       
       var page = file.data;
-          
+
+      var filename = file.relativeLink;
+      if (config.relativedest) {
+        filename = file.dest.replace(config.dest + "/", "");
+      }
+
       /**
        * @object defaults.item
        * @desc Sets default values for each item in the RSS feed.
@@ -153,7 +160,7 @@ module.exports = function (config, callback) {
         title: page.title || fail('title'),
         author: defaults.author || page.author || fail('author'),
         description: page.description || fail('description'),
-        url: url.resolve(pkg.homepage, file.relativeLink), 
+        url: url.resolve(pkg.homepage, filename),
         guid: page.guid || page.url, 
         categories: page.categories,
         lat: page.lat, 
@@ -178,7 +185,7 @@ module.exports = function (config, callback) {
      * proof this middleware for versions of assemble that don't depend on 
      * grunt.
      */
-    var dest = config.dest || path.join(page.dirname,'feed.xml');        
+    var dest = config.dest ? path.join(config.dest, config.feedname) : path.join(page.dirname, config.feedname);
     fs.writeFileSync(dest, output);
     
   };
